@@ -124,6 +124,24 @@ def _load_env_file(p):
 
 _load_env()
 
+
+def _default_bu_name() -> str:
+    """Derive a BU_NAME from the current working directory basename + short hash.
+
+    Using basename alone causes collisions (two different `frontend/` dirs share
+    a socket). The hash suffix makes names cwd-unique while keeping them readable.
+    Falls back to "default" if the slug would be empty.
+    """
+    import hashlib, re as _re
+    cwd = Path(os.getcwd())
+    slug = _re.sub(r"[^A-Za-z0-9_-]+", "-", cwd.name.lower()).strip("-")
+    suffix = hashlib.md5(str(cwd).encode()).hexdigest()[:6]
+    name = f"{slug}-{suffix}" if slug else f"default-{suffix}"
+    return name[:64]
+
+
+os.environ.setdefault("BU_NAME", _default_bu_name())
+
 NAME = os.environ.get("BU_NAME", "default")
 BU_API = "https://api.browser-use.com/api/v3"
 PYPI_JSON = "https://pypi.org/pypi/browser-harness/json"
